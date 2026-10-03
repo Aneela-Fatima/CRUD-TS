@@ -7,7 +7,26 @@ import taskRoutes from "./routes/tasks";
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL ?? "http://localhost:5173" }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",").map((item) => item.trim()).filter(Boolean) : []),
+  ...(process.env.CLIENT_URLS ? process.env.CLIENT_URLS.split(",").map((item) => item.trim()).filter(Boolean) : []),
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
